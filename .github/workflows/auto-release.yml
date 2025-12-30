@@ -13,23 +13,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Build zip (only .lua + .toc)
+      - name: Create release archive
         run: |
-          set -e
           mkdir -p dist
+          zip -j dist/WarstormSpecManager.zip *.lua *.toc
 
-          # If your addon files are in the repo root:
-          find . -maxdepth 1 -type f \( -name "*.lua" -o -name "*.toc" \) -print
-
-          # Create a zip containing ONLY those files, without paths
-          zip -j dist/WarstormSpecManager.zip ./*.lua ./*.toc
-
-      - name: Create/Update GitHub Release (tag: latest)
+      - name: Create or update GitHub release
         uses: ncipollo/release-action@v1
         with:
           tag: latest
@@ -38,4 +30,3 @@ jobs:
           replacesArtifacts: true
           removeArtifacts: true
           artifacts: dist/WarstormSpecManager.zip
-          generateReleaseNotes: true
