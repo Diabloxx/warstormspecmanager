@@ -1,0 +1,41 @@
+name: Auto Release (Lua + TOC only)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build zip (only .lua + .toc)
+        run: |
+          set -e
+          mkdir -p dist
+
+          # If your addon files are in the repo root:
+          find . -maxdepth 1 -type f \( -name "*.lua" -o -name "*.toc" \) -print
+
+          # Create a zip containing ONLY those files, without paths
+          zip -j dist/WarstormSpecManager.zip ./*.lua ./*.toc
+
+      - name: Create/Update GitHub Release (tag: latest)
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: Auto Release
+          allowUpdates: true
+          replacesArtifacts: true
+          removeArtifacts: true
+          artifacts: dist/WarstormSpecManager.zip
+          generateReleaseNotes: true
