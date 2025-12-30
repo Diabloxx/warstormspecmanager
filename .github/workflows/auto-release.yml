@@ -25,7 +25,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: latest
-          name: Auto Release
+          name: Automatic Release - Lua + TOC only
+          body: This release contains only the Lua and TOC files.
+          makeLatest: true
           allowUpdates: true
           replacesArtifacts: true
           removeArtifacts: true
