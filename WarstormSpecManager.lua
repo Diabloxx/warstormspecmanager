@@ -1,5 +1,5 @@
 -- ----------------------------
--- SavedVariables init
+-- SavedVariables init (V2)
 -- ----------------------------
 WarstormSpecManagerDB = WarstormSpecManagerDB or {}
 
@@ -8,7 +8,10 @@ local function WSSM_DB()
 
     if type(db.comps) ~= "table" then db.comps = {} end
     if type(db.lastComp) ~= "string" then db.lastComp = "" end
-    if type(db.autoRaidDuringBuild) ~= "boolean" then db.autoRaidDuringBuild = true end 
+    if type(db.autoRaidDuringBuild) ~= "boolean" then db.autoRaidDuringBuild = true end
+
+    -- Remove legacy keys from older builds/copies
+    db.currentComp = nil
 
     -- Hardcoded for Warstorm server
     db.interval = 0.70
@@ -19,6 +22,34 @@ local function WSSM_DB()
 end
 
 local DB = WSSM_DB()
+
+-- IMPORTANT: always keep DB.comps referencing the SavedVariables table
+DB.comps = WarstormSpecManagerDB.comps
+
+-- ----------------------------
+-- SV guards (keep runtime & SV in sync)
+-- ----------------------------
+local WSSM_SVGuard = CreateFrame("Frame")
+WSSM_SVGuard:RegisterEvent("PLAYER_LOGIN")
+WSSM_SVGuard:RegisterEvent("PLAYER_LOGOUT")
+WSSM_SVGuard:SetScript("OnEvent", function(_, event)
+    if event == "PLAYER_LOGIN" then
+        WarstormSpecManagerDB = WarstormSpecManagerDB or {}
+        if type(WarstormSpecManagerDB.comps) ~= "table" then
+            WarstormSpecManagerDB.comps = {}
+        end
+        WarstormSpecManagerDB.currentComp = nil
+
+        DB = WSSM_DB()
+        DB.comps = WarstormSpecManagerDB.comps
+    elseif event == "PLAYER_LOGOUT" then
+        WarstormSpecManagerDB = WarstormSpecManagerDB or {}
+        WarstormSpecManagerDB.comps = DB.comps or {}
+        WarstormSpecManagerDB.lastComp = DB.lastComp or ""
+        WarstormSpecManagerDB.autoRaidDuringBuild = (DB.autoRaidDuringBuild ~= false)
+        WarstormSpecManagerDB.currentComp = nil
+    end
+end)
 
 -- ----------------------------
 -- Force-commit SavedVariables on logout
@@ -865,13 +896,13 @@ local function WSSM_CreateBotPanel(parentFrame)
             AddEntry(name, WSSM_RAID_PRESETS[name], false)
         end
 
-        -- AddTitle("Saved comps")
-        -- for _, compName in ipairs(WSSM_GetCompNames()) do
-        --     local comp = DB.comps[compName]
-        --     if type(comp) == "table" then
-        --         AddEntry(compName, comp, true)
-        --     end
-        -- end
+        AddTitle("Saved comps")
+        for _, compName in ipairs(WSSM_GetCompNames()) do
+            local comp = DB.comps[compName]
+            if type(comp) == "table" then
+                AddEntry(compName, comp, true)
+            end
+        end
     end)
 
     -- Status line
@@ -892,24 +923,24 @@ local function WSSM_CreateBotPanel(parentFrame)
         DEFAULT_CHAT_FRAME:AddMessage("|cffffaa00[Warstorm]|r Queue cleared.")
     end)
 
-    --local saveBtn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    --saveBtn:SetSize(90, 22)
-    --saveBtn:SetPoint("BOTTOM", p, "BOTTOM", 0, 54)
-    --saveBtn:SetText("Save")
-    --saveBtn:SetScript("OnClick", function()
-    --    local name = Trim(p.nameBox:GetText())
-    --    if name == "" then
-    --        DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[Warstorm]|r Enter a comp name first.")
-    --        return
-    --    end
-    --    DB.comps[name] = ReadCompFromUI()
-    --    DB.lastComp = name
-    --    UIDropDownMenu_Initialize(p.drop, p.drop.initialize)
-    --    UIDropDownMenu_SetText(p.drop, name)
-    --    local c = 0
-    --    for _ in pairs(DB.comps) do c = c + 1 end
-    --    DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[Warstorm]|r Saved comp: "..name.." (total saved: "..c..")")
-    --end)
+    local saveBtn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+    saveBtn:SetSize(90, 22)
+    saveBtn:SetPoint("BOTTOM", p, "BOTTOM", 0, 54)
+    saveBtn:SetText("Save")
+    saveBtn:SetScript("OnClick", function()
+        local name = Trim(p.nameBox:GetText())
+        if name == "" then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[Warstorm]|r Enter a comp name first.")
+            return
+        end
+        DB.comps[name] = ReadCompFromUI()
+        DB.lastComp = name
+        UIDropDownMenu_Initialize(p.drop, p.drop.initialize)
+        UIDropDownMenu_SetText(p.drop, name)
+        local c = 0
+        for _ in pairs(DB.comps) do c = c + 1 end
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[Warstorm]|r Saved comp: "..name.." (total saved: "..c..")")
+    end)
 
 -- ================================
 -- 3.3.5 compatibility helpers (GLOBAL)
