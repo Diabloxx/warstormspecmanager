@@ -2,7 +2,7 @@
 ## Title: WarstormSpecManager
 ## Notes: Extended Specmanager + Party Manager for Warstorm 3.3.5a
 ## Author: Patchs & Valleriaa
-## Version: 2.1
+## Version: 2.1.1
 ## SavedVariables: WarstormSpecManagerDB
 
 WarstormSpecManager.lua
