@@ -1017,15 +1017,25 @@ end
 local WSSM_AutoRaid = CreateFrame("Frame")
 WSSM_AutoRaid:RegisterEvent("PARTY_MEMBERS_CHANGED")
 WSSM_AutoRaid:SetScript("OnEvent", function()
-    -- If we have at least 1 party member and are not already a raid
+    -- Only auto-convert while we are actively building bots
+    -- (prevents questing/invites from forcing raid)
+    if not (WSSM_SendQueue and #WSSM_SendQueue > 0) then
+        return
+    end
+
+    -- Optional additional safety: only when bot window is open
+    if not (frame and frame.botPanel and frame.botPanel:IsShown()) then
+        return
+    end
+
     if not WSSM_IsInRaid() and GetNumPartyMembers() > 0 then
-        -- Only the leader can convert
         if WSSM_IsLeader() then
             ConvertToRaid()
             DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[Warstorm]|r Party converted to raid.")
         end
     end
 end)
+
 
 
 -- ================================
