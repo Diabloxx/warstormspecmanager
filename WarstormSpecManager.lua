@@ -776,6 +776,8 @@ local function WSSM_CreateBotPanel(parentFrame)
     drop:SetPoint("TOPRIGHT", p, "TOPRIGHT", -14, -38)
     UIDropDownMenu_SetWidth(drop, 120)
     p.drop = drop
+    frame.botPanel.drop = drop
+
 
     -- Count boxes
     p.countBoxes = {}
