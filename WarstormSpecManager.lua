@@ -20,6 +20,26 @@ end
 
 local DB = WSSM_DB()
 
+-- ----------------------------
+-- Force-commit SavedVariables on logout
+-- (prevents other copies/old keys from overwriting our saved comps)
+-- ----------------------------
+local WSSM_SVCommit = CreateFrame("Frame")
+WSSM_SVCommit:RegisterEvent("PLAYER_LOGOUT")
+WSSM_SVCommit:SetScript("OnEvent", function()
+    -- Ensure the SavedVariables table exists and points to our current DB state
+    WarstormSpecManagerDB = WarstormSpecManagerDB or {}
+
+    -- Hard overwrite the fields we care about right before WoW writes SavedVariables
+    WarstormSpecManagerDB.comps = DB.comps or {}
+    WarstormSpecManagerDB.lastComp = DB.lastComp or ""
+    WarstormSpecManagerDB.autoRaidDuringBuild = (DB.autoRaidDuringBuild ~= false)
+
+    -- Remove legacy key from older versions / other copies
+    WarstormSpecManagerDB.currentComp = nil
+end)
+
+
 -- Spec data per class (English class tokens)
 local paladin_specs = {"prot pve","ret pve","holy pve","prot pvp","ret pvp","holy pvp"}
 local warrior_specs = {"prot pve","arms pve","fury pve","prot pvp","arms pvp","fury pvp"}
@@ -887,7 +907,9 @@ local function WSSM_CreateBotPanel(parentFrame)
         DB.lastComp = name
         UIDropDownMenu_Initialize(p.drop, p.drop.initialize)
         UIDropDownMenu_SetText(p.drop, name)
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[Warstorm]|r Saved comp: "..name)
+        local c = 0
+        for _ in pairs(DB.comps) do c = c + 1 end
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[Warstorm]|r Saved comp: "..name.." (total saved: "..c..")")
     end)
 
 -- ================================
@@ -978,9 +1000,28 @@ end
 
 local function WSSM_ToggleBotPanel()
     if not frame then return end
+
     WSSM_CreateBotPanel(frame)
-    if frame.botPanel:IsShown() then frame.botPanel:Hide() else frame.botPanel:Show() end
+
+    -- If we're about to show it, rebuild the dropdown from SavedVariables
+    if not frame.botPanel:IsShown() then
+        if frame.botPanel.drop and frame.botPanel.drop.initialize then
+            UIDropDownMenu_Initialize(frame.botPanel.drop, frame.botPanel.drop.initialize)
+
+            -- Optional: show last used comp name in the dropdown text
+            if DB and DB.lastComp and DB.lastComp ~= "" then
+                UIDropDownMenu_SetText(frame.botPanel.drop, DB.lastComp)
+            else
+                UIDropDownMenu_SetText(frame.botPanel.drop, "Saved comps")
+            end
+        end
+
+        frame.botPanel:Show()
+    else
+        frame.botPanel:Hide()
+    end
 end
+
 
 -- =========================================================
 -- Add a "Bots" button on your main frame (next to Autogear/Close)
