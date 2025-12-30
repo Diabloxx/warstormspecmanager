@@ -1,6 +1,24 @@
--- ================================
--- WarstormSpecManager v1.0
--- ================================
+-- ----------------------------
+-- SavedVariables init
+-- ----------------------------
+WarstormSpecManagerDB = WarstormSpecManagerDB or {}
+
+local function WSSM_DB()
+    local db = WarstormSpecManagerDB
+
+    if type(db.comps) ~= "table" then db.comps = {} end
+    if type(db.lastComp) ~= "string" then db.lastComp = "" end
+    if type(db.autoRaidDuringBuild) ~= "boolean" then db.autoRaidDuringBuild = true end 
+
+    -- Hardcoded for Warstorm server
+    db.interval = 0.70
+    db.commandChannel = "SAY"
+    db.addPattern = ".warstormbot bot addclass %s"
+
+    return db
+end
+
+local DB = WSSM_DB()
 
 -- Spec data per class (English class tokens)
 local paladin_specs = {"prot pve","ret pve","holy pve","prot pvp","ret pvp","holy pvp"}
@@ -504,29 +522,6 @@ end)
 -- WarstormSpecManager - Bot Party/Comp Manager (Warstorm server)
 -- Uses: .warstormbot bot addclass <class>  (SAY)
 -- =========================================================
-
--- ----------------------------
--- SavedVariables init
--- ----------------------------
-WarstormSpecManagerDB = WarstormSpecManagerDB or {}
-
-local function WSSM_DB()
-    local db = WarstormSpecManagerDB
-
-    if type(db.comps) ~= "table" then db.comps = {} end
-    if type(db.lastComp) ~= "string" then db.lastComp = "" end
-
-    -- Hardcoded for Warstorm server
-    db.interval = 0.70
-    db.commandChannel = "SAY"
-    db.addPattern = ".warstormbot bot addclass %s"
-
-    return db
-end
-
-
-local DB = WSSM_DB()
-
 -- ----------------------------
 -- Class mapping (server tokens)
 -- ----------------------------
@@ -552,6 +547,9 @@ local WSSM_SendQueue = {}
 local WSSM_Sending = false
 local WSSM_Elapsed = 0
 
+-- True only while the addon is actively building a group/raid
+local WSSM_BUILD_ACTIVE = false
+
 local function WSSM_Queue(msg)
     if not msg or msg == "" then return end
     table.insert(WSSM_SendQueue, msg)
@@ -561,15 +559,17 @@ end
 local function WSSM_ClearQueue()
     wipe(WSSM_SendQueue)
     WSSM_Sending = false
+    WSSM_BUILD_ACTIVE = false
 end
 
 local WSSM_Ticker = CreateFrame("Frame")
 WSSM_Ticker:SetScript("OnUpdate", function(self, elapsed)
     if not WSSM_Sending then return end
     if #WSSM_SendQueue == 0 then
-        WSSM_Sending = false
-        return
-    end
+    WSSM_Sending = false
+    WSSM_BUILD_ACTIVE = false
+    return
+end
 
     local interval = tonumber(DB.interval) or 0.40
     if interval < 0.10 then interval = 0.10 end
@@ -602,10 +602,21 @@ end
 
 local function WSSM_QueueComp(comp)
     if type(comp) ~= "table" then return end
+
+    local total = 0
+    for _, classToken in ipairs(WSSM_CLASS_ORDER) do
+        total = total + (tonumber(comp[classToken]) or 0)
+    end
+
+    if total <= 0 then return end
+
+    WSSM_BUILD_ACTIVE = true
+
     for _, classToken in ipairs(WSSM_CLASS_ORDER) do
         WSSM_QueueAddClass(classToken, comp[classToken] or 0)
     end
 end
+
 
 -- =========================================================
 -- UI Panel (simple, anchored to your existing frame)
@@ -1019,14 +1030,16 @@ WSSM_AutoRaid:RegisterEvent("PARTY_MEMBERS_CHANGED")
 WSSM_AutoRaid:SetScript("OnEvent", function()
     -- Only auto-convert while we are actively building bots
     -- (prevents questing/invites from forcing raid)
-    if not (WSSM_SendQueue and #WSSM_SendQueue > 0) then
+    -- Only auto-convert while we are actively building via the addon
+    if not WSSM_BUILD_ACTIVE then
         return
     end
 
-    -- Optional additional safety: only when bot window is open
-    if not (frame and frame.botPanel and frame.botPanel:IsShown()) then
+    -- Optional: allow user toggle (default ON)
+    if WarstormSpecManagerDB and WarstormSpecManagerDB.autoRaidDuringBuild == false then
         return
     end
+
 
     if not WSSM_IsInRaid() and GetNumPartyMembers() > 0 then
         if WSSM_IsLeader() then
