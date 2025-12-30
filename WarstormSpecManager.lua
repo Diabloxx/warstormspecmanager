@@ -34,9 +34,6 @@ WSSM_SVCommit:SetScript("OnEvent", function()
     WarstormSpecManagerDB.comps = DB.comps or {}
     WarstormSpecManagerDB.lastComp = DB.lastComp or ""
     WarstormSpecManagerDB.autoRaidDuringBuild = (DB.autoRaidDuringBuild ~= false)
-
-    -- Remove legacy key from older versions / other copies
-    WarstormSpecManagerDB.currentComp = nil
 end)
 
 
