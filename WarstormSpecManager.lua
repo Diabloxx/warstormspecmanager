@@ -813,18 +813,18 @@ local function WSSM_CreateBotPanel(parentFrame)
         return comp
     end
 
-    local function LoadCompToUI(name, comp)
-        if type(comp) ~= "table" then return end
-        p.nameBox:SetText(name or "")
-        for _, classToken in ipairs(WSSM_CLASS_ORDER) do
-            local box = p.countBoxes[classToken]
-            if box then
-                box:SetText(tostring(tonumber(comp[classToken]) or 0))
-            end
-        end
-        UIDropDownMenu_SetText(p.drop, name or "Saved comps")
-        UIDropDownMenu_SetSelectedValue(p.drop, name)
-    end
+   local function LoadCompToUI(name, comp)
+       if type(comp) ~= "table" then return end
+       p.nameBox:SetText(name or "")
+       for _, classToken in ipairs(WSSM_CLASS_ORDER) do
+           local box = p.countBoxes[classToken]
+           if box then
+               box:SetText(tostring(tonumber(comp[classToken]) or 0))
+           end
+       end
+       UIDropDownMenu_SetText(p.drop, name or "Saved comps")
+       UIDropDownMenu_SetSelectedValue(p.drop, name)
+   end
 
     local function GetPresetNames(suffix)
         local t = {}
@@ -865,13 +865,13 @@ local function WSSM_CreateBotPanel(parentFrame)
             AddEntry(name, WSSM_RAID_PRESETS[name], false)
         end
 
-        AddTitle("Saved comps")
-        for _, compName in ipairs(WSSM_GetCompNames()) do
-            local comp = DB.comps[compName]
-            if type(comp) == "table" then
-                AddEntry(compName, comp, true)
-            end
-        end
+        -- AddTitle("Saved comps")
+        -- for _, compName in ipairs(WSSM_GetCompNames()) do
+        --     local comp = DB.comps[compName]
+        --     if type(comp) == "table" then
+        --         AddEntry(compName, comp, true)
+        --     end
+        -- end
     end)
 
     -- Status line
@@ -892,24 +892,24 @@ local function WSSM_CreateBotPanel(parentFrame)
         DEFAULT_CHAT_FRAME:AddMessage("|cffffaa00[Warstorm]|r Queue cleared.")
     end)
 
-    local saveBtn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    saveBtn:SetSize(90, 22)
-    saveBtn:SetPoint("BOTTOM", p, "BOTTOM", 0, 54)
-    saveBtn:SetText("Save")
-    saveBtn:SetScript("OnClick", function()
-        local name = Trim(p.nameBox:GetText())
-        if name == "" then
-            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[Warstorm]|r Enter a comp name first.")
-            return
-        end
-        DB.comps[name] = ReadCompFromUI()
-        DB.lastComp = name
-        UIDropDownMenu_Initialize(p.drop, p.drop.initialize)
-        UIDropDownMenu_SetText(p.drop, name)
-        local c = 0
-        for _ in pairs(DB.comps) do c = c + 1 end
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[Warstorm]|r Saved comp: "..name.." (total saved: "..c..")")
-    end)
+    --local saveBtn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+    --saveBtn:SetSize(90, 22)
+    --saveBtn:SetPoint("BOTTOM", p, "BOTTOM", 0, 54)
+    --saveBtn:SetText("Save")
+    --saveBtn:SetScript("OnClick", function()
+    --    local name = Trim(p.nameBox:GetText())
+    --    if name == "" then
+    --        DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[Warstorm]|r Enter a comp name first.")
+    --        return
+    --    end
+    --    DB.comps[name] = ReadCompFromUI()
+    --    DB.lastComp = name
+    --    UIDropDownMenu_Initialize(p.drop, p.drop.initialize)
+    --    UIDropDownMenu_SetText(p.drop, name)
+    --    local c = 0
+    --    for _ in pairs(DB.comps) do c = c + 1 end
+    --    DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[Warstorm]|r Saved comp: "..name.." (total saved: "..c..")")
+    --end)
 
 -- ================================
 -- 3.3.5 compatibility helpers (GLOBAL)
@@ -1011,7 +1011,7 @@ local function WSSM_ToggleBotPanel()
             if DB and DB.lastComp and DB.lastComp ~= "" then
                 UIDropDownMenu_SetText(frame.botPanel.drop, DB.lastComp)
             else
-                UIDropDownMenu_SetText(frame.botPanel.drop, "Saved comps")
+                UIDropDownMenu_SetText(frame.botPanel.drop, "Presets here --> ")
             end
         end
 
