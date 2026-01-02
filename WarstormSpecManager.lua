@@ -16,7 +16,7 @@ local function WSSM_DB()
     -- Hardcoded for Warstorm server
     db.interval = 0.70
     db.commandChannel = "SAY"
-    db.addPattern = ".warstormbot bot addclass %s"
+    db.addPattern = ".playerbot bot addclass %s"
 
     return db
 end
@@ -826,7 +826,7 @@ local function WSSM_CreateBotPanel(parentFrame)
         box:SetPoint("TOPRIGHT", p, "TOPRIGHT", -40, y)
         box:SetAutoFocus(false)
         box:SetNumeric(true)
-        box:SetMaxLetters(2) -- keep compact but allow 10+
+        box:SetMaxLetters(1) -- keep compact but allow 10+
         box:SetJustifyH("CENTER")
         box:SetText("0")
         box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
